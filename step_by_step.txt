@@ -1,0 +1,52 @@
+TRANSLYRICS — STEP BY STEP
+==========================
+
+
+FIRST TIME SETUP (run once)
+-----------------------------
+
+1. Install Python dependencies:
+   python -m pip install yt-dlp openai-whisper deep-translator
+
+2. Install ffmpeg and add it to your system PATH:
+   Download from https://ffmpeg.org/download.html
+   On Windows: extract the zip, then add the bin\ folder to your PATH.
+
+3. Navigate to the project folder in your terminal before running any command.
+
+
+STEP 1 — EXTRACT LYRICS FROM YOUTUBE
+--------------------------------------
+
+   python translyrics.py "YOUR_YOUTUBE_URL"
+
+   → Creates a folder named after the video in your current directory.
+     Inside it: a .txt file with the lyrics and an .mp3 of the audio.
+
+   Optional flags:
+     --whisper          force Whisper transcription (skip captions)
+     --model medium     use a larger Whisper model (more accurate, slower)
+     --no-lang-check    use captions as-is without language verification
+
+
+STEP 2 — TRANSLATE THE LYRICS (optional)
+------------------------------------------
+
+   python translation.py "Song Title\Song Title.txt" YOUR_LANGUAGE
+
+   Examples of languages: french, spanish, romanian, latin, japanese, german, ukrainian
+
+   → Saves a translated .txt alongside the original.
+
+   Ukrainian is special: outputs both Cyrillic and a Latin transliteration
+   in the same file, separated by a divider.
+
+
+NOTES
+------
+- File names with spaces or special characters must be wrapped in quotes.
+- If captions are unavailable or in the wrong language, the script falls
+  back to Whisper automatically (downloads and transcribes the audio).
+- Whisper runs fully offline after the model is downloaded the first time.
+- The MP3 is always saved in the song's output folder, even when captions
+  are used (so you always end up with both the lyrics and the audio).

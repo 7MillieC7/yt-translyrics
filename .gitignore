@@ -1,0 +1,13 @@
+# Project docs (local only)
+CLAUDE.md
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Whisper cached model weights
+*.pt
+
+# Generated output (song folders with lyrics and audio)
+/*/
+*.mp3
