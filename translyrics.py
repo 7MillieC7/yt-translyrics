@@ -38,7 +38,7 @@ def sanitize_filename(name: str) -> str:
     return re.sub(r'[\\/*?:"<>|]', "_", name)
 
 
-def transcribe_with_whisper(url: str, title: str, model_size: str, audio_dir: str) -> tuple[str, str]:
+def transcribe_with_whisper(url: str, title: str, model_size: str, audio_dir: str, cookies_args: list) -> tuple[str, str]:
     """
     Download audio via yt-dlp and transcribe with OpenAI Whisper.
     Returns (transcript_text, detected_language_code).
@@ -57,8 +57,8 @@ def transcribe_with_whisper(url: str, title: str, model_size: str, audio_dir: st
     print(f"[INFO] Downloading audio for: {title}")
     subprocess.run([
         sys.executable, "-m", "yt_dlp",
-        "--no-playlist", "-x", "--audio-format", "mp3",
-        "-o", audio_path, url,
+        "--no-playlist", "-x", "--audio-format", "mp3", "--remote-components", "ejs:github",
+        "-o", audio_path, *cookies_args, url,
     ], check=True, timeout=600)
     print(f"[INFO] MP3 saved to: {audio_path}")
 
@@ -86,13 +86,16 @@ def main():
                         help="Whisper model size (default: base). Larger = more accurate but slower.")
     parser.add_argument("--no-lang-check", action="store_true",
                         help="Skip caption language mismatch detection (use captions as-is)")
+    parser.add_argument("--cookies-from-browser", metavar="BROWSER",
+                        help="Pass browser cookies to yt-dlp (e.g. chrome, firefox, edge). Required for age-restricted videos.")
     args = parser.parse_args()
+    cookies_args = ["--cookies-from-browser", args.cookies_from_browser] if args.cookies_from_browser else []
 
     print(f"[INFO] Processing: {args.url}\n")
 
     print("[INFO] Fetching video metadata...")
     meta_result = subprocess.run(
-        [sys.executable, "-m", "yt_dlp", "--dump-json", "--no-playlist", args.url],
+        [sys.executable, "-m", "yt_dlp", "--dump-json", "--no-playlist", "--remote-components", "ejs:github", *cookies_args, args.url],
         capture_output=True, text=True, timeout=30
     )
     try:
@@ -105,7 +108,7 @@ def main():
     output_dir = sanitize_filename(title)[:MAX_FILENAME_LEN]
 
     if args.whisper:
-        transcript, transcript_lang = transcribe_with_whisper(args.url, title, args.model, output_dir)
+        transcript, transcript_lang = transcribe_with_whisper(args.url, title, args.model, output_dir, cookies_args)
         source = f"Whisper transcription (model: {args.model})"
     else:
         manual = list(metadata.get("subtitles", {}).keys())
@@ -125,8 +128,9 @@ def main():
                 sys.executable, "-m", "yt_dlp",
                 "--skip-download", "--write-auto-sub", "--write-sub",
                 "--sub-lang", sub_lang, "--sub-format", "vtt",
-                "--no-playlist", "-o", os.path.join(tmpdir, "%(title)s.%(ext)s"),
-                args.url,
+                "--no-playlist", "--remote-components", "ejs:github",
+                "-o", os.path.join(tmpdir, "%(title)s.%(ext)s"),
+                *cookies_args, args.url,
             ], capture_output=True, text=True, timeout=60)
 
             vtt_files = [f for f in os.listdir(tmpdir) if f.endswith(".vtt")]
@@ -170,7 +174,7 @@ def main():
                         print("[WARN] Captions appear to be a translation, not the original lyrics.")
                         print("[INFO] Falling back to Whisper to transcribe the actual lyrics...")
                         transcript, transcript_lang = transcribe_with_whisper(
-                            args.url, title, args.model, output_dir
+                            args.url, title, args.model, output_dir, cookies_args
                         )
                         source = f"Whisper transcription (model: {args.model})"
                     else:
@@ -189,7 +193,7 @@ def main():
         else:
             print("[INFO] No captions available. Falling back to Whisper transcription.")
             transcript, transcript_lang = transcribe_with_whisper(
-                args.url, title, args.model, output_dir
+                args.url, title, args.model, output_dir, cookies_args
             )
             source = f"Whisper transcription (model: {args.model})"
 
@@ -211,8 +215,8 @@ def main():
         print("[INFO] Downloading MP3...")
         dl_result = subprocess.run([
             sys.executable, "-m", "yt_dlp",
-            "--no-playlist", "-x", "--audio-format", "mp3",
-            "-o", mp3_path, args.url,
+            "--no-playlist", "-x", "--audio-format", "mp3", "--remote-components", "ejs:github",
+            "-o", mp3_path, *cookies_args, args.url,
         ], capture_output=True, text=True, timeout=600)
         if dl_result.returncode == 0 and os.path.exists(mp3_path):
             print(f"[DONE] MP3 saved to: {mp3_path}")

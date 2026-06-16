@@ -42,9 +42,10 @@ Output: a folder named after the video, containing `Song Title.txt` and `Song Ti
 
 Optional flags:
 ```
---whisper            skip captions, always use Whisper
---model medium       use a more accurate (but slower) Whisper model
---no-lang-check      use captions without language verification
+--whisper                        skip captions, always use Whisper
+--model medium                   use a more accurate (but slower) Whisper model
+--no-lang-check                  use captions without language verification
+--cookies-from-browser firefox   pass browser cookies (required for age-restricted videos)
 ```
 
 **Translate lyrics:**
@@ -60,5 +61,5 @@ Supported languages include: `french`, `spanish`, `romanian`, `latin`, `japanese
 
 - No API keys needed — Google Translate is called for free via `deep-translator`.
 - Whisper runs fully offline after the model downloads the first time (~75 MB for `base`).
-- If a video has no captions and Whisper can't access it (age-restricted, private), extraction will fail.
+- For age-restricted videos, add `--cookies-from-browser firefox` (or `chrome`/`edge`) — you must be logged into YouTube in that browser.
 - Wrap file paths containing spaces or special characters in quotes.
